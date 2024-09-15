@@ -68,7 +68,7 @@
         h1 {
             text-align: center;
             margin-bottom: 20px;
-            color: #007bff; /* Heading color */
+            color: #007bff; 
         }
     </style>
 </head>
@@ -123,7 +123,7 @@
             // Prevent more than one dot in a number
             if (value === '.') {
                 if (lastChar === '' || isOperator(lastChar) || lastChar === '(') {
-                    return; // Dot cannot follow an operator or opening parenthesis
+                    return; 
                 }
                 // Prevent more than one dot in the current number
                 const parts = displayValue.split(/[\+\-\*\/\%]/);
