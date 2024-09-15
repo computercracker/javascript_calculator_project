@@ -1,5 +1,5 @@
 
-my name is Elias DUKUZUMUREMYI,     
+My Name is Elias DUKUZUMUREMYI,     
 LEVEL 6 YEAR 2 IT,  
 RP TUMBA COLLEGUES
 
