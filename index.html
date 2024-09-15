@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced JavaScript Calculator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+            font-family: 'Arial', sans-serif;
+        }
+        .calculator {
+            width: 320px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #007bff; /* Added border */
+        }
+        #display {
+            width: 100%;
+            height: 60px;
+            background-color: #ececf8;
+            border: none;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 2em;
+            text-align: right;
+            border-radius: 5px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            border: none;
+            background-color: #f1f3f5;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #ddd;
+        }
+        .buttons button:nth-child(4n) {
+            background-color: #007bff;
+            color: white;
+        }
+        .buttons button:nth-child(4n):hover {
+            background-color: #0056b3;
+        }
+        button#equals {
+            background-color: #28a745;
+            color: white;
+            grid-column: span 2;
+        }
+        button#equals:hover {
+            background-color: #218838;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff; /* Heading color */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <h1>Calculator</h1>
+        <input type="text" id="display" disabled>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="deleteLast()">DEL</button>
+            <button onclick="appendToDisplay('%')">%</button>
+            <button onclick="appendToDisplay('/')">/</button>
+
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button onclick="appendToDisplay('*')">*</button>
+            
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button onclick="appendToDisplay('-')">-</button>
+            
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="appendToDisplay('+')">+</button>
+            
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+            <button onclick="appendToDisplay('(')">(</button>
+            <button onclick="appendToDisplay(')')">)</button>
+
+            <button onclick="sqrt()">√</button>
+            <button id="equals" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let displayValue = '';
+
+        function appendToDisplay(value) {
+            const display = document.getElementById('display');
+            const lastChar = displayValue.slice(-1);
+
+            // Prevent consecutive operators
+            if (isOperator(value) && (isOperator(lastChar) || lastChar === '' || lastChar === '(')) {
+                return;
+            }
+
+            // Prevent more than one dot in a number
+            if (value === '.') {
+                if (lastChar === '' || isOperator(lastChar) || lastChar === '(') {
+                    return; // Dot cannot follow an operator or opening parenthesis
+                }
+                // Prevent more than one dot in the current number
+                const parts = displayValue.split(/[\+\-\*\/\%]/);
+                if (parts[parts.length - 1].includes('.')) {
+                    return;
+                }
+            }
+
+            // Prevent invalid parentheses
+            if (value === '(' && (lastChar === ')' || lastChar === '' || lastChar === '(')) {
+                return;
+            }
+            if (value === ')' && (lastChar === '' || countOpenParentheses() <= countCloseParentheses())) {
+                return;
+            }
+
+            displayValue += value;
+            display.value = displayValue;
+        }
+
+        function isOperator(char) {
+            return ['+', '-', '*', '/', '%'].includes(char);
+        }
+
+        function countOpenParentheses() {
+            return (displayValue.match(/\(/g) || []).length;
+        }
+
+        function countCloseParentheses() {
+            return (displayValue.match(/\)/g) || []).length;
+        }
+
+        function clearDisplay() {
+            displayValue = '';
+            document.getElementById('display').value = '';
+        }
+
+        function deleteLast() {
+            displayValue = displayValue.slice(0, -1);
+            document.getElementById('display').value = displayValue;
+        }
+
+        function calculate() {
+            let expression = displayValue;
+
+            // Convert infix to postfix and then evaluate
+            try {
+                expression = infixToPostfix(expression);
+                displayValue = evaluatePostfix(expression);
+            } catch (error) {
+                displayValue = 'Error';
+            }
+            document.getElementById('display').value = displayValue;
+        }
+
+        function infixToPostfix(infix) {
+            let output = '';
+            const operators = [];
+            const precedence = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2 };
+
+            // Add an implicit multiplication operator where needed
+            infix = infix.replace(/(\d)(\()/g, '$1*$2');
+            infix = infix.replace(/(\))(\d)/g, '$1*$2');
+
+            infix.split('').forEach(char => {
+                if (/\d/.test(char) || char === '.') {
+                    output += char;
+                } else if (char === '(') {
+                    operators.push(char);
+                } else if (char === ')') {
+                    while (operators.length && operators[operators.length - 1] !== '(') {
+                        output += ' ' + operators.pop();
+                    }
+                    operators.pop(); // Remove the '('
+                } else if (isOperator(char)) {
+                    output += ' ';
+                    while (operators.length && precedence[operators[operators.length - 1]] >= precedence[char]) {
+                        output += operators.pop() + ' ';
+                    }
+                    operators.push(char);
+                }
+            });
+
+            while (operators.length) {
+                output += ' ' + operators.pop();
+            }
+
+            return output;
+        }
+
+        function evaluatePostfix(postfix) {
+            const stack = [];
+            const tokens = postfix.split(' ');
+
+            tokens.forEach(token => {
+                if (/\d/.test(token) || token.includes('.')) {
+                    stack.push(parseFloat(token));
+                } else if (isOperator(token)) {
+                    const b = stack.pop();
+                    const a = stack.pop();
+                    switch (token) {
+                        case '+': stack.push(a + b); break;
+                        case '-': stack.push(a - b); break;
+                        case '*': stack.push(a * b); break;
+                        case '/': stack.push(a / b); break;
+                        case '%': stack.push(a % b); break;
+                    }
+                }
+            });
+
+            return stack[0];
+        }
+
+        function sqrt() {
+            const display = document.getElementById('display');
+
+            if (!displayValue || isOperator(displayValue.slice(-1))) {
+                displayValue = 'Error';
+                document.getElementById('display').value = displayValue;
+                return;
+            }
+
+            try {
+                const result = Math.sqrt(evaluatePostfix(infixToPostfix(displayValue)));
+                displayValue = result === undefined || result === Infinity || isNaN(result) ? 'Error' : result;
+                document.getElementById('display').value = displayValue;
+            } catch (error) {
+                displayValue = 'Error';
+                document.getElementById('display').value = displayValue;
+            }
+        }
+    </script>
+
+</body>
+</html>
